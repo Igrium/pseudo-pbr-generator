@@ -13,11 +13,11 @@ public class SpecularGlossyTextureSet extends BaseTextureSet {
     @TextureField(prettyName = "Glossiness")
     protected BufferedImage gloss;
 
-    @TextureField(prettyName = "Ambient Occlusion")
-    protected BufferedImage ao;
-
     @TextureField(prettyName = "Normal")
     protected BufferedImage normal;
+
+    @TextureField(prettyName = "Ambient Occlusion")
+    protected BufferedImage ao;
 
     public BufferedImage getDiffuse() {
         return diffuse;

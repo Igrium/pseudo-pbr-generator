@@ -1,5 +1,8 @@
 package com.igrium.pseudo_pbr.pipeline;
 
+import java.io.File;
+import java.nio.file.Path;
+
 import com.igrium.pseudo_pbr.pipeline.texture_sets.TextureSet;
 
 public interface ConversionMethod<T extends TextureSet> {
@@ -14,9 +17,14 @@ public interface ConversionMethod<T extends TextureSet> {
     
     /**
      * Execute the conversion.
-     * @param gameFiles File consumer to take files that go in the <code>game</code> directory.
-     * @param contentFiles File consumer to take files that go in the <code>content</code> directory.
+     * 
+     * @param gameFiles    File consumer to take files that go in the
+     *                     <code>game</code> directory.
+     * @param contentFiles File consumer to take files that go in the
+     *                     <code>content</code> directory.
+     * @param inputFile    Target QC file.
+     * @param enginePath   The path where engine executables can be found.
      * @throws Exception If anything goes wrong in the process.
      */
-    public void execute(FileConsumer gameFiles, FileConsumer contentFiles) throws Exception;
+    public void execute(FileConsumer gameFiles, FileConsumer contentFiles, File inputModel, Path enginePath) throws Exception;
 }

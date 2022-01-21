@@ -6,6 +6,8 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import com.igrium.pseudo_pbr.ui.MainWindow.DirectoryClass;
+
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -20,6 +22,7 @@ import javafx.stage.FileChooser;
 public class TextureSetter {
 
     public static Image MISSING_IMAGE = new Image("/ui/images/missing_image.png");
+    private MainWindow parent;
 
     private File currentFile;
     private BufferedImage image;
@@ -55,9 +58,11 @@ public class TextureSetter {
     @FXML
     public void handleBrowse() {
         FileChooser chooser = new FileChooser();
-        if (currentFile != null) {
-            chooser.setInitialDirectory(currentFile.getParentFile());
-        }
+        String parentPath = currentFile != null ? currentFile.getParent() : "";
+        
+        String initial = parent.getInitialDirectory(parentPath, DirectoryClass.TEXTURE);
+        if (initial != null) chooser.setInitialDirectory(new File(initial));
+        
         File file = chooser.showOpenDialog(preview.getScene().getWindow());
         if (file == null) return;
         try {
@@ -70,6 +75,7 @@ public class TextureSetter {
             e.printStackTrace();
             alert.show();
         }
+        parent.texturePathCache = file.getParent();
     }
 
     @FXML
@@ -103,7 +109,7 @@ public class TextureSetter {
      * @param title Title to give the dropdown.
      * @return Texture setter instance.
      */
-    public static TextureSetter open(String title) {
+    public static TextureSetter open(String title, MainWindow parent) {
         FXMLLoader loader = new FXMLLoader(TextureSetter.class.getResource("/ui/texture_setter.fxml"));
         try {
             loader.load();
@@ -112,6 +118,7 @@ public class TextureSetter {
         }
         TextureSetter obj = loader.getController();
         obj.setTitle(title);
+        obj.parent = parent;
         return obj;
     }
 }
