@@ -190,24 +190,13 @@ public class MainWindow {
             e.printStackTrace();
             return;
         }
-        
 
-        try {
-            conversionMethod.execute(
-                new FileConsumer.BasicFileConsumer(modRoot.toPath()),
-                new FileConsumer.BasicFileConsumer(contentRoot.toPath()),
-                new File(qcInputField.getText()),
-                engineRoot.toPath()
-            );
-        } catch (Throwable e) {
-            showError("Error performing texture conversion.", e.getMessage());
-            e.printStackTrace();
-            return;
-        }
-
-        Alert alert = new Alert(AlertType.INFORMATION);
-        alert.setTitle("success");
-        alert.setHeaderText("Conversion successful.");
-        alert.show();
+        ProgressViewer.runConversion(
+            conversionMethod,
+            new File(qcInputField.getText()),
+            new FileConsumer.BasicFileConsumer(modRoot.toPath()),
+            new FileConsumer.BasicFileConsumer(contentRoot.toPath()),
+            engineRoot.toPath()
+        );
     }
 }

@@ -14,6 +14,7 @@ import javax.imageio.ImageIO;
 
 import com.igrium.pseudo_pbr.pipeline.ConversionMethod;
 import com.igrium.pseudo_pbr.pipeline.FileConsumer;
+import com.igrium.pseudo_pbr.pipeline.ProgressListener;
 import com.igrium.pseudo_pbr.pipeline.texture_sets.SpecularGlossyTextureSet;
 import com.igrium.pseudo_pbr.qc.QCFile;
 import com.igrium.pseudo_pbr.qc.QCFile.QCCommand;
@@ -28,7 +29,8 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
     }
 
     @Override
-    public void execute(FileConsumer gameFiles, FileConsumer contentFiles, File inputFile, Path enginePath) throws Exception {
+    public void execute(File inputFile, FileConsumer gameFiles, FileConsumer contentFiles, Path enginePath,
+            ProgressListener progress) throws Exception {
         QCFile qc = QCFile.read(new BufferedReader(new FileReader(inputFile)));
         
         QCCommand cdMats = qc.getCommand("cdmaterials");
@@ -39,10 +41,15 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             matsPath = Paths.get("materials", cdMats.getArg(0));
         }
 
+        progress.progress(1f / 5f, "Writing diffuse texture.");
         writeImage(matsPath, "diffuse.png", gameFiles, textureSet.getDiffuse());
+        progress.progress(2f / 5f, "Writing specular texture.");
         writeImage(matsPath, "spec.png", gameFiles, textureSet.getSpecular());
+        progress.progress(3f / 5f, "Writing glossiness texture.");
         writeImage(matsPath, "gloss.png", gameFiles, textureSet.getGloss());
+        progress.progress(4f / 5f, "Writing normal texture.");
         writeImage(matsPath, "normal.png", gameFiles, textureSet.getNormal());
+        progress.progress(1, "Complete.");
         
     }
 

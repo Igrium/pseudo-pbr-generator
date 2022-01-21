@@ -24,7 +24,9 @@ public interface ConversionMethod<T extends TextureSet> {
      *                     <code>content</code> directory.
      * @param inputFile    Target QC file.
      * @param enginePath   The path where engine executables can be found.
+     * @param progress     A progress listener to recieve updates about the
+     *                     conversion process.
      * @throws Exception If anything goes wrong in the process.
      */
-    public void execute(FileConsumer gameFiles, FileConsumer contentFiles, File inputModel, Path enginePath) throws Exception;
+    public void execute(File inputModel, FileConsumer gameFiles, FileConsumer contentFiles, Path enginePath, ProgressListener progress) throws Exception;
 }
