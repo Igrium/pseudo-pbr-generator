@@ -1,6 +1,7 @@
 package com.igrium.pseudo_pbr.image_processing;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 
 /**
  * Mimics a Photoshop "levels" filter.
@@ -66,6 +67,8 @@ public class LevelsOp extends LinearOp {
 
     @Override
     public BufferedImage filter(BufferedImage source, BufferedImage dest) {
+        if (dest == null) dest = createCompatibleDestImage(source, ColorModel.getRGBdefault());
+
         for (int y = 0; y < source.getHeight(); y++) {
             for (int x = 0; x < source.getWidth(); x++) {
                 int rgb = source.getRGB(x, y);

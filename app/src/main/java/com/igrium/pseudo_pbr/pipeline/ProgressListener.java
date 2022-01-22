@@ -14,7 +14,7 @@ public interface ProgressListener {
      * 
      * @param percentage A value from 0-1 indicating what percentage of the task is
      *                   complete.
-     * @param message    Feeback message about the task at hand.
+     * @param message    Feeback message about the current step.
      */
     void progress(float percentage, String message);
     
@@ -25,4 +25,14 @@ public interface ProgressListener {
      * @param message Warning message.
      */
     default void warn(String message) {};
+
+    /**
+     * Update the progress bar.
+     * @param step The current progress step number.
+     * @param total The total amount of steps.
+     * @param message Feedback message about the current step.
+     */
+    default void progress(int step, int total, String message) {
+        progress((float)step / (float)total, message);
+    }
 }

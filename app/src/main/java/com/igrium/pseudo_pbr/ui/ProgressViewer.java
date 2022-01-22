@@ -128,6 +128,7 @@ public class ProgressViewer {
                 error.setHeaderText("Error performing texture conversion.");
                 error.setContentText(e.getMessage());
                 e.printStackTrace();
+                error.show();
             } else {
                 Alert alert = new Alert(AlertType.INFORMATION);
                 alert.setTitle("Success");
