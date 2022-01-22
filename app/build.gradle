@@ -22,6 +22,7 @@ javafx {
 
 dependencies {
     testImplementation 'junit:junit:4.13.1'
+    // implementation 'org.openpnp:opencv:4.5.1-2'
 }
 
 application {

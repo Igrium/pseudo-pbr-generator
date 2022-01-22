@@ -1,6 +1,8 @@
 package com.igrium.pseudo_pbr.methods;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.AlphaComposite;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,16 +43,29 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             matsPath = Paths.get("materials", cdMats.getArg(0));
         }
 
-        progress.progress(1f / 5f, "Writing diffuse texture.");
-        writeImage(matsPath, "diffuse.png", gameFiles, textureSet.getDiffuse());
-        progress.progress(2f / 5f, "Writing specular texture.");
-        writeImage(matsPath, "spec.png", gameFiles, textureSet.getSpecular());
-        progress.progress(3f / 5f, "Writing glossiness texture.");
-        writeImage(matsPath, "gloss.png", gameFiles, textureSet.getGloss());
-        progress.progress(4f / 5f, "Writing normal texture.");
-        writeImage(matsPath, "normal.png", gameFiles, textureSet.getNormal());
-        progress.progress(1, "Complete.");
+        BufferedImage diffuse = textureSet.getDiffuse();
+
+        // progress.progress(1f / 5f, "Writing diffuse texture.");
+        // writeImage(matsPath, "diffuse.png", gameFiles, textureSet.getDiffuse());
+        // progress.progress(2f / 5f, "Writing specular texture.");
+        // writeImage(matsPath, "spec.png", gameFiles, textureSet.getSpecular());
+        // progress.progress(3f / 5f, "Writing glossiness texture.");
+        // writeImage(matsPath, "gloss.png", gameFiles, textureSet.getGloss());
+        // progress.progress(4f / 5f, "Writing normal texture.");
+        // writeImage(matsPath, "normal.png", gameFiles, textureSet.getNormal());
+        // progress.progress(1, "Complete.");
         
+    }
+
+    private BufferedImage genDiffuse(BufferedImage baseColor, BufferedImage ao) {
+        if (ao == null) {
+            return baseColor;
+        }
+
+        Graphics2D g2d = baseColor.createGraphics();
+        // g2d.setComposite(AlphaComposite.);
+
+        return null;
     }
 
     private void writeImage(Path matsPath, String imageName, FileConsumer consumer, BufferedImage image) throws IOException {
