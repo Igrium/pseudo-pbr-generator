@@ -6,10 +6,12 @@ import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -22,8 +24,10 @@ import com.igrium.pseudo_pbr.image_processing.ImageUtils.ColorChannel;
 import com.igrium.pseudo_pbr.image_processing.LevelsOp;
 import com.igrium.pseudo_pbr.pipeline.ConversionMethod;
 import com.igrium.pseudo_pbr.pipeline.FileConsumer;
+import com.igrium.pseudo_pbr.pipeline.ModelStackCreator;
 import com.igrium.pseudo_pbr.pipeline.ProgressListener;
 import com.igrium.pseudo_pbr.pipeline.texture_sets.SpecularGlossyTextureSet;
+import com.igrium.pseudo_pbr.qc.Mesh;
 import com.igrium.pseudo_pbr.qc.QCFile;
 import com.igrium.pseudo_pbr.qc.QCFile.QCCommand;
 
@@ -31,6 +35,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
 
     private SpecularGlossyTextureSet textureSet = new SpecularGlossyTextureSet();
     private Path matsPath;
+    private Path enginePath;
     private FileConsumer gameFiles;
     private FileConsumer contentFiles;
 
@@ -46,11 +51,58 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             ProgressListener progress) throws Exception {
         this.gameFiles = gameFiles;
         this.contentFiles = contentFiles;
+        this.enginePath = enginePath;
         
         progress.progress(0, "Initializing...");
 
         QCFile qc = QCFile.read(new BufferedReader(new FileReader(inputFile)));
         
+        // STACKS
+        progress.progress(1, 7, "Setting up model stacking.");
+        Path qcFolder = inputFile.getParentFile().toPath();
+        
+        // The output QC file, relative to the content root.
+        Path convertedQCPath = Paths.get("modelsrc", qc.getModelName()+".qc");
+        Path convertedQCFolder = convertedQCPath.getParent();
+
+        ModelStackCreator stacker = new ModelStackCreator(name -> {
+            // Mesh provider
+            File file = qcFolder.resolve(name).toFile();
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+
+            Mesh mesh = Mesh.loadMesh(reader);
+            reader.close();
+            return mesh;
+
+        }, (name, mesh) -> {
+            // Mesh consumer
+            Path filename = convertedQCFolder.resolve(name);
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(contentFiles.getOutputStream(filename)));
+            try {
+                mesh.save(writer);
+            } finally {
+                writer.close();
+            }
+        });
+
+        stacker.setMaterialNamingScheme((mat, index) -> {
+            if (index == 0) return mat+"_base";
+            if (index == 1) return mat+"_spec";
+            if (index == 2) return mat+"_ch";
+            if (index == 3) return mat+"_env";
+            return mat+"_"+index;
+        });
+
+        stacker.setupStack(qc, 3);
+
+        {
+            BufferedWriter writer = new BufferedWriter(
+                    new OutputStreamWriter(contentFiles.getOutputStream(convertedQCPath)));
+            qc.serialize(writer);
+            writer.close();
+        }
+
+        // Mats
         QCCommand cdMats = qc.getCommand("cdmaterials");
         if (cdMats == null) {
             matsPath = Paths.get("materials");
@@ -58,6 +110,12 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             matsPath = Paths.get("materials", cdMats.getArg(0));
         }
 
+        processTextures(new ProgressListener.SubProgressListener(progress, 2, 6, 7));
+
+    }
+
+    // 5 steps
+    private void processTextures(ProgressListener progress) throws IOException {
         BufferedImage diffuse = textureSet.getDiffuse();
         if (diffuse == null) {
             throw new IllegalArgumentException("Diffuse map must be set.");
@@ -66,7 +124,6 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
 
         int width = diffuse.getWidth();
         int height = diffuse.getHeight();
-        
 
         BufferedImage specular = textureSet.getSpecular();
         if (specular == null) {
@@ -97,9 +154,9 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         }
 
         // DIFFUSE
-        progress.progress(1, 6, "Generating diffuse map...");
-        System.out.println("Diffuse color model: "+diffuse.getColorModel());
-        System.out.println("AO color type: "+ao.getType());
+        progress.progress(0, 5, "Generating diffuse map...");
+        System.out.println("Diffuse color model: " + diffuse.getColorModel());
+        System.out.println("AO color type: " + ao.getType());
 
         if (textureSet.getAO() != null) {
             Graphics2D diffuseComp = diffuse.createGraphics();
@@ -110,10 +167,10 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         writeImage("diffuse", diffuse);
 
         // GLOSS
-        progress.progress(2, 6, "Generating exponent map...");
- 
+        progress.progress(1, 5, "Generating exponent map...");
+
         BufferedImage exponent = GraphicsUtilities.createCompatibleImage(width, height);
-        {   
+        {
             Graphics2D comp = exponent.createGraphics();
 
             LevelsOp levels1 = new LevelsOp();
@@ -142,7 +199,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         writeImage("exponent", exponent);
 
         // NORMAL
-        progress.progress(3, 6, "Generating normal map...");
+        progress.progress(2, 5, "Generating normal map...");
 
         BufferedImage normalAlpha = GraphicsUtilities.createCompatibleImage(width, height);
         {
@@ -164,7 +221,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
 
             LevelsOp levels3 = new LevelsOp();
             levels3.setInputRight(10);
-            
+
             comp.setComposite(BlendComposite.Multiply);
             comp.drawImage(tempSpec, levels3, 0, 0);
 
@@ -175,7 +232,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         writeImage("normal", normal);
 
         // SPECULAR
-        progress.progress(4, 6, "Generating specular map...");
+        progress.progress(3, 5, "Generating specular map...");
 
         ColorConvertOp desaturator = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
         BufferedImage specularAlpha = GraphicsUtilities.toCompatibleImage(desaturator.filter(specular, null));
@@ -194,7 +251,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         writeImage("specular", specular);
 
         // CH
-        progress.progress(5, 6, "Generating CH mao...");
+        progress.progress(4, 5, "Generating CH map...");
 
         BufferedImage ch = gloss; // We can now re-use the gloss buffer because we don't need the original anymore
         {
@@ -218,9 +275,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         writeImage("ch", ch);
 
         progress.progress(1, "Complete.");
-
     }
-
 
     private void writeImage(String imageName, BufferedImage image) throws IOException {
         Path imagePath = matsPath.resolve(imageName+".png");

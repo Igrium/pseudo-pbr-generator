@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +42,8 @@ public class QCFile {
             if (commandArgs.size() == 0) {
                 return "$"+commandName;
             }
-            return "$"+commandName+" "+String.join(" ", commandArgs);
+            List<String> quotedArgs = commandArgs.stream().map(arg -> "\""+arg+"\"").toList();
+            return "$"+commandName+" "+String.join(" ", quotedArgs);
         }
 
         public static QCCommand read(String command) throws IOException {
@@ -54,10 +56,24 @@ public class QCFile {
             String commandName = parts.get(0);
             return new QCCommand(commandName, parts.subList(1, parts.size()));
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getName(), getCommandArgs());
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return (hashCode() == other.hashCode());
+        }
     }
 
     private List<QCCommand> commands = new ArrayList<>();
 
+    /**
+     * Get a mutable list of all this QC file's commands.
+     * @return QC commands.
+     */
     public List<QCCommand> getCommands() {
         return commands;
     }
@@ -72,6 +88,31 @@ public class QCFile {
             if (command.getName().equals(name)) return command;
         }
         return null;
+    }
+
+    /**
+     * Get all instances of a command with a given name.
+     * @param name The command name.
+     * @return The command instances, in the order they appear in the file.
+     */
+    public List<QCCommand> getAllCommands(String name) {
+        List<QCCommand> commands = new ArrayList<>();
+        for (QCCommand command : this.commands) {
+            if (command.getName().equals(name)) commands.add(command);
+        }
+        return commands;
+    }
+
+    /**
+     * Get the model path of this QC file.
+     * @return The model path, relative to the mod root and missing an extension.
+     */
+    public String getModelName() {
+        QCCommand command = getCommand("modelname");
+        if (command == null) {
+            throw new IllegalStateException("QC file is missing $modelname tag.");
+        }
+        return command.getArg(0);
     }
 
     public void serialize(Writer writer) throws IOException {

@@ -18,6 +18,8 @@ public interface ConversionMethod<T extends TextureSet> {
     /**
      * Execute the conversion.
      * 
+     * @param inputModel   The QC file on which the conversion will happen.
+     * 
      * @param gameFiles    File consumer to take files that go in the
      *                     <code>game</code> directory.
      * @param contentFiles File consumer to take files that go in the
