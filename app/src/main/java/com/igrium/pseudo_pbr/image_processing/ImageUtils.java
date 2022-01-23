@@ -2,7 +2,9 @@ package com.igrium.pseudo_pbr.image_processing;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorConvertOp;
 import java.awt.image.WritableRaster;
 
 public final class ImageUtils {
@@ -34,7 +36,7 @@ public final class ImageUtils {
      * @return The image.
      */
     public static BufferedImage blankImage(int width, int height, Color color, int type) {
-        BufferedImage image = new BufferedImage(width, height, type);
+        BufferedImage image = GraphicsUtilities.createCompatibleImage(width, height);
         Graphics2D gfx = image.createGraphics();
         gfx.setColor(color);
         gfx.fillRect(0, 0, width, height);
@@ -56,25 +58,29 @@ public final class ImageUtils {
 
         for (int x = 0; x < dest.getWidth(); x++) {
             for (int y = 0; y < dest.getHeight(); y++) {
-                int sourceRGB = source.getRGB(x, y);
-                int destRGB = dest.getRGB(x, y);
+                Color sourceRGB = new Color(source.getRGB(x, y));
+                Color destRGB = new Color(dest.getRGB(x, y));
                 
                 int val;
                 if (channel == ColorChannel.RED) {
-                    val = (sourceRGB >> 16) & 0xff;
+                    val = sourceRGB.getRed();
                 } else if (channel == ColorChannel.GREEN) {
-                    val = (sourceRGB >> 8) & 0xff;
+                    val = sourceRGB.getGreen();
                 } else if (channel == ColorChannel.BLUE) {
-                    val = (sourceRGB >> 0) & 0xff;
+                    val = sourceRGB.getBlue();
                 } else {
-                    val = (sourceRGB >> 24) & 0xff;
+                    val = sourceRGB.getAlpha();
                 }
 
-                int mc = (val << 24) | 0x00ffffff;
-                dest.setRGB(x, y, destRGB & mc);
+                dest.setRGB(x, y, new Color(destRGB.getRed(), destRGB.getGreen(), destRGB.getBlue(), val).getRGB());
             }
         }
 
         return dest;
+    }
+
+    public BufferedImage desaturate(BufferedImage image) {
+        ColorConvertOp desaturator = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+        return GraphicsUtilities.toCompatibleImage(desaturator.filter(image, null));
     }
 }

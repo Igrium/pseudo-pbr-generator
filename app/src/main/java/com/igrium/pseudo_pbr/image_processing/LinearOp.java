@@ -14,9 +14,10 @@ import java.util.HashMap;
 public abstract class LinearOp implements BufferedImageOp {
 
     @Override
-    public BufferedImage createCompatibleDestImage(BufferedImage img, ColorModel colorModel) {
-        BufferedImage image = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
-        return image;
+    public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel dstCM) {
+        if ( dstCM == null )
+            dstCM = src.getColorModel();
+        return new BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(src.getWidth(), src.getHeight()), dstCM.isAlphaPremultiplied(), null);
     }
 
     @Override
