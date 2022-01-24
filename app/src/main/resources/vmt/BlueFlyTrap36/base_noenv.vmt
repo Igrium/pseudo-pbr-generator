@@ -1,0 +1,14 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "$[diffuse]"
+	"$bumpmap" "$[normalmap]"
+
+	"$phongdisablehalflambert"	"1"
+
+	"$phongexponenttexture" "$[exponent]"
+
+	"$phong" "1"
+	"$phongboost"			"23.076"
+
+	"$phongfresnelranges"	"[0 .225 1]"
+}

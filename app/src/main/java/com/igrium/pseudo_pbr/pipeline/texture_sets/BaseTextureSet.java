@@ -18,7 +18,7 @@ public abstract class BaseTextureSet implements TextureSet {
         for (Field field : clazz.getDeclaredFields()) {
             if (!field.isAnnotationPresent(TextureField.class)) continue;
             if (!BufferedImage.class.isAssignableFrom(field.getType())) {
-                throw new AssertionError("Field "+field.getName()+" must be assignable to BufferedImage!");
+                throw new IllegalStateException("Field "+field.getName()+" must be assignable to BufferedImage!");
             }
             field.setAccessible(true);
             TextureField annotation = field.getAnnotation(TextureField.class);
@@ -64,6 +64,15 @@ public abstract class BaseTextureSet implements TextureSet {
             throw new RuntimeException("Unable to set field value.", e);
         }
         
+    }
+
+    @Override
+    public TextureType getTextureType(String texID) throws IllegalArgumentException {
+        Field field = fields.get(texID);
+        if (field == null) {
+            throw new IllegalArgumentException("No texture found with ID "+texID);
+        }
+        return field.getAnnotation(TextureField.class).type();
     }
     
 }

@@ -1,0 +1,19 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "$[spec]"
+	"$bumpmap" "$[normalmap]"
+
+	"$color2"			"[0 0 0]"
+	"$additive"	"1"
+	"$translucent"	"1"
+
+	"$phongexponenttexture" "$[exponent]"
+	"$phongalbedotint"	"1"
+
+	"$phong" "1"
+	"$phongboost"			"184.615"
+
+	"$phongfresnelranges"	"[.25 0.625 1]"
+
+	"$ambientocclusion"	"0.7"
+}

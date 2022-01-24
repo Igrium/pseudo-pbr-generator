@@ -2,8 +2,10 @@ package com.igrium.pseudo_pbr.pipeline;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.igrium.pseudo_pbr.qc.Mesh;
@@ -46,8 +48,9 @@ public class ModelStackCreator {
      * Setup stacking on a model.
      * @param file Model's QC file. Will be modified.
      * @param numStacks Number of stacks to set.
+     * @return A mapping of base mesh names and the materials in their stacks.
      */
-    public void setupStack(QCFile file, int numStacks) {
+    public Map<String, List<String>> setupStack(QCFile file, int numStacks) {
         List<QCCommand> modelCommands = new ArrayList<>();
 
         for (QCCommand command : file.getCommands()) {
@@ -55,6 +58,8 @@ public class ModelStackCreator {
                 modelCommands.add(command);
             }
         }
+
+        Map<String, List<String>> mats = new HashMap<>();
         for (QCCommand command : modelCommands) {
             String meshName = command.getArg(1);
             Mesh mesh;
@@ -66,14 +71,20 @@ public class ModelStackCreator {
                 continue;
             }
             file.getCommands().remove(command);
+            List<String> stackMats = new ArrayList<>();
             for (int i = 0; i < numStacks; i++) {
                 String newName = remapMeshName(meshName, i);
                 Mesh newMesh = mesh.clone();
                 
                 Set<String> oldMatNames = new HashSet<>();
                 oldMatNames.addAll(newMesh.getMatNames());
+                if (oldMatNames.size() > 1) {
+                    throw new IllegalArgumentException("Pseudo PBR Generator only works with single-material models for now.");
+                }
                 for (String mat : oldMatNames) {
-                    newMesh.changeMatName(mat, materialNamingScheme.apply(mat, i));
+                    String newMatName = materialNamingScheme.apply(mat, i);
+                    newMesh.changeMatName(mat, newMatName);
+                    stackMats.add(newMatName);
                 }
 
                 try {
@@ -84,7 +95,9 @@ public class ModelStackCreator {
                 
                 file.getCommands().add(new QCCommand("model", command.getArg(0), newName));
             }
-        }        
+            mats.put(meshName, stackMats);
+        }
+        return mats;
     }
 
     private String remapMeshName(String name, int index) {

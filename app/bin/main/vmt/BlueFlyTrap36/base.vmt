@@ -1,0 +1,19 @@
+"VertexlitGeneric"
+{
+	"$basetexture" "$[diffuse]"
+	"$bumpmap" "$[normalmap]"
+
+	"$phongdisablehalflambert"	"1"
+
+	"$phongexponenttexture" "$[exponent]"
+
+	"$phong" "1"
+	"$phongboost"			"23.076"
+
+	"$phongfresnelranges"	"[0 .225 1]"
+
+	"$envmap" "models\cubemaps\fallout4cube_dithered_grey"
+	"$normalmapalphaenvmapmask"		"1"
+	"$envmapfresnel"	"1"
+	"$envmaptint"	"[.66 .66 .66]"
+}

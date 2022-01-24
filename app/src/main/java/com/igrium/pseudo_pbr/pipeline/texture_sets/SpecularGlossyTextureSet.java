@@ -4,19 +4,19 @@ import java.awt.image.BufferedImage;
 
 public class SpecularGlossyTextureSet extends BaseTextureSet {
     
-    @TextureField(prettyName = "Diffuse")
+    @TextureField(prettyName = "Diffuse", type = TextureType.COLOR)
     protected BufferedImage diffuse;
 
-    @TextureField(prettyName = "Specular")
+    @TextureField(prettyName = "Specular", type = TextureType.SPECULAR)
     protected BufferedImage specular;
 
-    @TextureField(prettyName = "Glossiness")
+    @TextureField(prettyName = "Glossiness", type = TextureType.GLOSS)
     protected BufferedImage gloss;
 
-    @TextureField(prettyName = "Normal")
+    @TextureField(prettyName = "Normal", type = TextureType.NORMAL)
     protected BufferedImage normal;
 
-    @TextureField(prettyName = "Ambient Occlusion")
+    @TextureField(prettyName = "Ambient Occlusion", type = TextureType.AO)
     protected BufferedImage ao;
 
     public BufferedImage getDiffuse() {

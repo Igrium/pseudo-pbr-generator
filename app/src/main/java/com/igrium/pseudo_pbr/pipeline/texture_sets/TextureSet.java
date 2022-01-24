@@ -10,6 +10,10 @@ import java.util.Set;
  */
 public interface TextureSet {
 
+    public enum TextureType {
+        DEFAULT, COLOR, NORMAL, SPECULAR, ROUGHNESS, GLOSS, AO
+    }
+
     /**
      * Get a set of texture map names that this texture set takes.
      * @return Texture map names.
@@ -25,4 +29,12 @@ public interface TextureSet {
      * Set all texture maps. Absent values will be left as-is.
      */
     void setTextureMaps(Map<String, BufferedImage> textureMaps);
+
+    /**
+     * Get the type of a particular texture.
+     * @param texID Texture ID.
+     * @return The texture type.
+     * @throws IllegalArgumentException If the texture set does not have a texture with this ID.
+     */
+    TextureType getTextureType(String texID) throws IllegalArgumentException;
 }

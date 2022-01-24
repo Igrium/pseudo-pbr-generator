@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 
@@ -30,16 +32,53 @@ import com.igrium.pseudo_pbr.pipeline.texture_sets.SpecularGlossyTextureSet;
 import com.igrium.pseudo_pbr.qc.Mesh;
 import com.igrium.pseudo_pbr.qc.QCFile;
 import com.igrium.pseudo_pbr.qc.QCFile.QCCommand;
+import com.igrium.pseudo_pbr.util.IOUtils;
 
 public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet> {
+    private static class Cache {
+        String baseVMT;
+        String chVMT;
+        String envVMT;
+        String specVMT;
+        String baseNoEnvVMT;
+
+        String loadFile(String file) throws IOException {
+            return IOUtils.readFile(getClass().getResourceAsStream(file));
+        }
+
+        public Cache() throws IOException {
+            baseVMT = loadFile("/vmt/BlueFlyTrap36/base.vmt");
+            chVMT = loadFile("/vmt/BlueFlyTrap36/ch.vmt");
+            envVMT = loadFile("/vmt/BlueFlyTrap36/env_grayscale.vmt");
+            specVMT = loadFile("/vmt/BlueFlyTrap36/spec.vmt");
+            baseNoEnvVMT = loadFile("/vmt/BlueFlyTrap36/base_noenv.vmt");
+        }
+    }
+
+    private static Cache cache;
 
     private SpecularGlossyTextureSet textureSet = new SpecularGlossyTextureSet();
     private Path matsPath;
-    private Path enginePath;
     private FileConsumer gameFiles;
-    private FileConsumer contentFiles;
+
+    public static final String DIFFUSE_TEX = "_diffuse";
+    public static final String EXPONENT_TEX = "_exponent";
+    public static final String NORMAL_TEX = "_normal";
+    public static final String SPEC_TEX = "_specular";
+    public static final String CH_TEX = "_ch";
 
     protected static final int IMAGE_FORMAT = BufferedImage.TYPE_INT_ARGB;
+
+    private static void initCache() {
+        if (cache != null) return;
+        try {
+            cache = new Cache();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to load template VMT files.", e);
+        }
+        
+    }
+    
 
     @Override
     public SpecularGlossyTextureSet getTextureSet() {
@@ -50,12 +89,12 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
     public void execute(File inputFile, FileConsumer gameFiles, FileConsumer contentFiles, Path enginePath,
             ProgressListener progress) throws Exception {
         this.gameFiles = gameFiles;
-        this.contentFiles = contentFiles;
-        this.enginePath = enginePath;
         
         progress.progress(0, "Initializing...");
 
         QCFile qc = QCFile.read(new BufferedReader(new FileReader(inputFile)));
+        String basename = qc.getModelName();
+        basename = basename.substring(basename.lastIndexOf('/') + 1);
         
         // STACKS
         progress.progress(1, 7, "Setting up model stacking.");
@@ -93,7 +132,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             return mat+"_"+index;
         });
 
-        stacker.setupStack(qc, 3);
+        Map<String, List<String>> matNames = stacker.setupStack(qc, 3);
 
         {
             BufferedWriter writer = new BufferedWriter(
@@ -101,6 +140,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             qc.serialize(writer);
             writer.close();
         }
+
 
         // Mats
         QCCommand cdMats = qc.getCommand("cdmaterials");
@@ -110,12 +150,49 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             matsPath = Paths.get("materials", cdMats.getArg(0));
         }
 
-        processTextures(new ProgressListener.SubProgressListener(progress, 2, 6, 7));
+        processTextures(new ProgressListener.SubProgressListener(progress, 2, 6, 7), basename);
+
+        progress.progress(6, 7, "Assembling materials...");
+
+        initCache();
+        for (List<String> stack : matNames.values()) {
+            String base = cache.baseVMT;
+            base = base.replace("$[diffuse]", getMatEntry(basename+DIFFUSE_TEX));
+            base = base.replace("$[normalmap]", getMatEntry(basename+NORMAL_TEX));
+            base = base.replace("$[exponent]", getMatEntry(basename+EXPONENT_TEX));
+            writeVMT(stack.get(0), base);
+
+            String baseNoEnv = cache.baseVMT;
+            baseNoEnv = baseNoEnv.replace("$[diffuse]", getMatEntry(basename+DIFFUSE_TEX));
+            baseNoEnv = baseNoEnv.replace("$[normalmap]", getMatEntry(basename+NORMAL_TEX));
+            baseNoEnv = baseNoEnv.replace("$[exponent]", getMatEntry(basename+EXPONENT_TEX));
+            writeVMT(stack.get(0)+"_noenv", base);
+
+            String spec = cache.specVMT;
+            spec = spec.replace("$[spec]", getMatEntry(basename+SPEC_TEX));
+            spec = spec.replace("$[normalmap]", getMatEntry(basename+NORMAL_TEX));
+            spec = spec.replace("$[exponent]", getMatEntry(basename+EXPONENT_TEX));
+            writeVMT(stack.get(1), spec);
+
+            String ch = cache.chVMT;
+            ch = ch.replace("$[spec]", getMatEntry(basename+SPEC_TEX));
+            ch = ch.replace("$[normalmap]", getMatEntry(basename+NORMAL_TEX));
+            ch = ch.replace("$[ch]", getMatEntry(basename+CH_TEX));
+            writeVMT(stack.get(2), ch);
+        }
+
+        progress.progress(1, "Complete.");
 
     }
 
+    private String getMatEntry(String mat) {
+        Path localMatsPath = Paths.get("materials").relativize(matsPath);
+        return localMatsPath.resolve(mat).toString();
+    }
+    
+
     // 5 steps
-    private void processTextures(ProgressListener progress) throws IOException {
+    private void processTextures(ProgressListener progress, String basename) throws IOException {
         BufferedImage diffuse = textureSet.getDiffuse();
         if (diffuse == null) {
             throw new IllegalArgumentException("Diffuse map must be set.");
@@ -164,7 +241,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             diffuseComp.drawImage(ao, 0, 0, null);
             diffuseComp.dispose();
         }
-        writeImage("diffuse", diffuse);
+        writeImage(basename+DIFFUSE_TEX, diffuse);
 
         // GLOSS
         progress.progress(1, 5, "Generating exponent map...");
@@ -196,7 +273,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             }
         }
 
-        writeImage("exponent", exponent);
+        writeImage(basename+EXPONENT_TEX, exponent);
 
         // NORMAL
         progress.progress(2, 5, "Generating normal map...");
@@ -229,7 +306,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
         }
 
         ImageUtils.applyAlpha(normalAlpha, normal, ColorChannel.RED);
-        writeImage("normal", normal);
+        writeImage(basename+NORMAL_TEX, normal);
 
         // SPECULAR
         progress.progress(3, 5, "Generating specular map...");
@@ -248,7 +325,7 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             specComp.dispose();
         }
         ImageUtils.applyAlpha(specularAlpha, specular, ColorChannel.RED);
-        writeImage("specular", specular);
+        writeImage(basename+SPEC_TEX, specular);
 
         // CH
         progress.progress(4, 5, "Generating CH map...");
@@ -272,15 +349,22 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             }
         }
 
-        writeImage("ch", ch);
+        writeImage(basename+CH_TEX, ch);
 
-        progress.progress(1, "Complete.");
     }
 
     private void writeImage(String imageName, BufferedImage image) throws IOException {
         Path imagePath = matsPath.resolve(imageName+".png");
         OutputStream os = gameFiles.getOutputStream(imagePath);
         ImageIO.write(image, "png", os);
+        os.close();
+    }
+
+    private void writeVMT(String matName, String content) throws IOException {
+        Path matPath = matsPath.resolve(matName+".vmt");
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(gameFiles.getOutputStream(matPath)));
+        writer.write(content);
+        writer.close();
     }
     
 }
