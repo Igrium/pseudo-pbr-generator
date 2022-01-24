@@ -1,5 +1,6 @@
 package com.igrium.pseudo_pbr.ui;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -177,10 +178,10 @@ public class MainWindow {
         }
 
         File engineRoot = new File(enginePathField.getText());
-        if (!engineRoot.isDirectory()) {
-            showError("Engine path must be a directory.", "This should be the folder with studiomdl.exe.");
-            return;
-        }
+        // if (!engineRoot.isDirectory()) {
+        //     showError("Engine path must be a directory.", "This should be the folder with studiomdl.exe.");
+        //     return;
+        // }
 
         File contentRoot = new File(contentPathField.getText());
         if (!contentRoot.isDirectory()) {
@@ -190,9 +191,14 @@ public class MainWindow {
 
         try {
             TextureSet textures = conversionMethod.getTextureSet();
-            textures.setTextureMaps(setterCache.get(conversionMethod).stream().collect(
-                Collectors.toMap(TextureSetter::getTitle, TextureSetter::getImage)
-            ));
+            Map<String, BufferedImage> textureMaps = new HashMap<>();
+            for (TextureSetter setter : setterCache.get(conversionMethod)) {
+                if (setter.getImage() != null) {
+                    textureMaps.put(setter.getTitle(), setter.getImage());
+                }
+            }
+            textures.setTextureMaps(textureMaps);
+
         } catch (Throwable e) {
             showError("Error loading texture maps.", e.getMessage());
             e.printStackTrace();

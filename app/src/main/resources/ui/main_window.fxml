@@ -137,11 +137,11 @@
                   <Button mnemonicParsing="false" onAction="#handleBrowseContent" text="Browse" GridPane.columnIndex="2" GridPane.rowIndex="2" />
                   <Label minWidth="-Infinity" text="Engine Path:">
                      <tooltip>
-                        <Tooltip text="Contains studiomdl.exe" />
+                        <Tooltip text="Not implemented yet!" />
                      </tooltip>
                   </Label>
-                  <TextField fx:id="enginePathField" GridPane.columnIndex="1" />
-                  <Button fx:id="engineBrowseButton" mnemonicParsing="false" onAction="#handleBrowseEngine" text="Browse" GridPane.columnIndex="2" />
+                  <Button fx:id="engineBrowseButton" disable="true" mnemonicParsing="false" onAction="#handleBrowseEngine" text="Browse" GridPane.columnIndex="2" />
+                  <TextField fx:id="enginePathField" disable="true" GridPane.columnIndex="1" />
                </children>
             </GridPane>
          </children>

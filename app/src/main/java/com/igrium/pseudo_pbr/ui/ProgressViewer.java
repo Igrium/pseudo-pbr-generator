@@ -88,6 +88,7 @@ public class ProgressViewer {
         stage.setTitle(title); 
         stage.setScene(scene);
         stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setResizable(false);
 
         ProgressViewer controller = loader.getController();
         controller.setHeader(title);
@@ -127,13 +128,18 @@ public class ProgressViewer {
                 Alert error = new Alert(AlertType.ERROR);
                 error.setTitle("Error");
                 error.setHeaderText("Error performing texture conversion.");
-                error.setContentText(e.getMessage());
+                String message = e.getMessage();
+                if (message == null || message.length() == 0) {
+                    message = e.getClass().getSimpleName();
+                }
+                error.setContentText(message);
                 e.printStackTrace();
                 error.show();
             } else {
                 Alert alert = new Alert(AlertType.INFORMATION);
                 alert.setTitle("Success");
                 alert.setHeaderText("Conversion successful.");
+                alert.setContentText("Check your content and mod folders for the output.");
                 alert.show();
             }
             progressViewer.close();
