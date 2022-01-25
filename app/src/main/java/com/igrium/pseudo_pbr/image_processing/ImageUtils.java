@@ -51,6 +51,7 @@ public final class ImageUtils {
      * @param channel Channel from source image.
      * @return <code>dest</code>
      */
+
     public static BufferedImage applyAlpha(BufferedImage source, BufferedImage dest, ColorChannel channel) {
         if (source.getWidth() != dest.getWidth() || source.getHeight() != dest.getHeight()) {
             throw new IllegalArgumentException("Source and destination images must be the same size!");
@@ -79,7 +80,7 @@ public final class ImageUtils {
         return dest;
     }
 
-    public BufferedImage desaturate(BufferedImage image) {
+    public static BufferedImage desaturate(BufferedImage image) {
         ColorConvertOp desaturator = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
         return GraphicsUtilities.toCompatibleImage(desaturator.filter(image, null));
     }
