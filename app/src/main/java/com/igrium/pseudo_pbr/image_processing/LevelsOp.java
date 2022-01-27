@@ -80,7 +80,7 @@ public class LevelsOp extends LinearOp {
                 dest.setRGB(x, y, (
                     (a << 24) |
                     (r << 16) |
-                    (g << 8) |
+                    (g << 8)  |
                     b
                 ));
             }
@@ -95,17 +95,19 @@ public class LevelsOp extends LinearOp {
      * @return An int from 0-255 indicating the transformed value.
      */
     public int applyLevels(int channelValue) {
-        channelValue = (int) (255 * ((double)(channelValue - inputLeft) / (double)(inputRight - inputLeft)));
+        double val = (int) (255 * ((double)(channelValue - inputLeft) / (double)(inputRight - inputLeft)));
         if (inputMid != 1) {
-            channelValue = applyGama(channelValue, inputMid);
+            val = applyGama(val, inputMid);
         }
-        channelValue = (int) ((channelValue / 225d) * (outputRight - outputLeft) + outputLeft);
-        return channelValue;
+        val = ((val / 225d) * (outputRight - outputLeft) + outputLeft);
+        if (val < 0) return 0;
+        if (val > 255) return 255;
+        return (int) val;
     }
 
     // https://github.com/varunpant/GHEAT-JAVA/blob/master/JavaHeatMaps/gheat/src/main/java/gheat/graphics/GammaCorrection.java
-    private int applyGama(int value, double gamma) {
-        return (int) (255 * (Math.pow(value / 255d, gamma)));
+    private double applyGama(double value, double gamma) {
+        return (255 * (Math.pow(value / 255d, gamma)));
     }
     
 }

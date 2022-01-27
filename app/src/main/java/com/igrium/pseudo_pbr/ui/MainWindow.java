@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.igrium.pseudo_pbr.methods.BlueFlyTrap36;
 import com.igrium.pseudo_pbr.pipeline.ConversionMethod;

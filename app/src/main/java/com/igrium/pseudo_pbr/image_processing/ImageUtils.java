@@ -5,6 +5,9 @@ import java.awt.Graphics2D;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DirectColorModel;
 import java.awt.image.WritableRaster;
 
 public final class ImageUtils {
@@ -83,5 +86,25 @@ public final class ImageUtils {
     public static BufferedImage desaturate(BufferedImage image) {
         ColorConvertOp desaturator = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
         return GraphicsUtilities.toCompatibleImage(desaturator.filter(image, null));
+    }
+
+    /**
+     * Verify that a color model is compatible with many of our operations.
+     * @param cm The color model to check.
+     * @return Is it compatible?
+     */
+    public static boolean checkCompatibility(ColorModel cm) {
+        if (cm instanceof DirectColorModel &&
+                cm.getTransferType() == DataBuffer.TYPE_INT) {
+            DirectColorModel directCM = (DirectColorModel) cm;
+            
+            return directCM.getRedMask() == 0x00FF0000 &&
+                   directCM.getGreenMask() == 0x0000FF00 &&
+                   directCM.getBlueMask() == 0x000000FF &&
+                   (directCM.getNumComponents() != 4 ||
+                    directCM.getAlphaMask() == 0xFF000000);
+        }
+        
+        return false;
     }
 }

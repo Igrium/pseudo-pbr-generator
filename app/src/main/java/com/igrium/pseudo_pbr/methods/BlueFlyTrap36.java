@@ -19,10 +19,9 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import com.igrium.pseudo_pbr.image_processing.ApplyChannelFilter;
+import com.igrium.pseudo_pbr.image_processing.ApplyAlphaFilter;
 import com.igrium.pseudo_pbr.image_processing.BlendComposite;
 import com.igrium.pseudo_pbr.image_processing.ChannelComposite;
-import com.igrium.pseudo_pbr.image_processing.ExtractChannelOp;
 import com.igrium.pseudo_pbr.image_processing.GraphicsUtilities;
 import com.igrium.pseudo_pbr.image_processing.ImageUtils;
 import com.igrium.pseudo_pbr.image_processing.ImageUtils.ColorChannel;
@@ -302,8 +301,8 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
 
             comp.dispose();
         }
-        new ApplyChannelFilter(normalAlpha, ColorChannel.RED, ColorChannel.ALPHA)
-            .filter(normal, normal);
+        normal = new ApplyAlphaFilter(normalAlpha)
+            .filter(normal, null);
 
         writeImage(basename+NORMAL_TEX, normal);
 
@@ -323,8 +322,8 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
 
             specComp.dispose();
         }
-        new ApplyChannelFilter(specularAlpha, ColorChannel.RED, ColorChannel.ALPHA)
-            .filter(specular, specular);
+        specular = new ApplyAlphaFilter(specularAlpha)
+            .filter(specular, null);
 
         writeImage(basename+SPEC_TEX, specular);
 
