@@ -21,11 +21,10 @@ import javax.imageio.ImageIO;
 
 import com.igrium.pseudo_pbr.image_processing.ApplyAlphaFilter;
 import com.igrium.pseudo_pbr.image_processing.BlendComposite;
-import com.igrium.pseudo_pbr.image_processing.ChannelComposite;
 import com.igrium.pseudo_pbr.image_processing.GraphicsUtilities;
 import com.igrium.pseudo_pbr.image_processing.ImageUtils;
-import com.igrium.pseudo_pbr.image_processing.ImageUtils.ColorChannel;
 import com.igrium.pseudo_pbr.image_processing.LevelsOp;
+import com.igrium.pseudo_pbr.image_processing.ImageUtils.ColorChannel;
 import com.igrium.pseudo_pbr.pipeline.ConversionMethod;
 import com.igrium.pseudo_pbr.pipeline.FileConsumer;
 import com.igrium.pseudo_pbr.pipeline.ModelStackCreator;
@@ -37,6 +36,7 @@ import com.igrium.pseudo_pbr.qc.QCFile.QCCommand;
 import com.igrium.pseudo_pbr.util.IOUtils;
 
 public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet> {
+    @SuppressWarnings("unused")
     private static class Cache {
         String baseVMT;
         String chVMT;
@@ -263,11 +263,19 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             comp.drawImage(gloss, levels2, 0, 0);
 
             // Fill green and blue channels
-            comp.setComposite(new ChannelComposite(ColorChannel.BLUE, ColorChannel.GREEN));
-            comp.setPaint(Color.WHITE);
-            comp.drawRect(0, 0, exponent.getWidth(), exponent.getHeight());
+            // comp.setComposite(new ChannelComposite(ColorChannel.BLUE, ColorChannel.GREEN));
+            // comp.setPaint(Color.WHITE);
+            // comp.drawRect(0, 0, width, height);
 
             comp.dispose();
+        }
+
+        // Fill green and blue channels
+        for (int y = 0; y < width; y++) {
+            for (int x = 0; x < height; x++) {
+                Color color = new Color(exponent.getRGB(x, y));
+                exponent.setRGB(x, y, new Color(color.getRed(), 255, 255).getRGB());
+            }
         }
 
         writeImage(basename+EXPONENT_TEX, exponent);
@@ -337,10 +345,18 @@ public class BlueFlyTrap36 implements ConversionMethod<SpecularGlossyTextureSet>
             chComp.drawImage(specularAlpha, 0, 0, null);
 
             // Clear green and blue channels.
-            chComp.setComposite(new ChannelComposite(ColorChannel.GREEN, ColorChannel.BLUE));
-            chComp.setColor(Color.BLACK);
-            chComp.drawRect(0, 0, ch.getWidth(), ch.getHeight());
+            // chComp.setComposite(new ChannelComposite(ColorChannel.GREEN, ColorChannel.BLUE));
+            // chComp.setColor(Color.BLACK);
+            // chComp.drawRect(0, 0, width, height);
             chComp.dispose();
+        }
+
+        // Clear green and blue channels
+        for (int y = 0; y < width; y++) {
+            for (int x = 0; x < height; x++) {
+                Color color = new Color(ch.getRGB(x, y));
+                ch.setRGB(x, y, new Color(color.getRed(), 0, 0).getRGB());
+            }
         }
 
         writeImage(basename+CH_TEX, ch);

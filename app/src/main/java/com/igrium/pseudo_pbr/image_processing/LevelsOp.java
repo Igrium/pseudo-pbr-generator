@@ -91,18 +91,16 @@ public class LevelsOp extends LinearOp {
     /**
      * Apply the levels operation to the value from a single channel.
      * 
-     * @param channelValue An int from 0-255 indicating the channel's value.
+     * @param channelValue A value from 0-255 indicating the channel's value.
      * @return An int from 0-255 indicating the transformed value.
      */
-    public int applyLevels(int channelValue) {
-        double val = (int) (255 * ((double)(channelValue - inputLeft) / (double)(inputRight - inputLeft)));
+    public int applyLevels(double channelValue) {
+        channelValue = (255 * ((double)(channelValue - inputLeft) / (double)(inputRight - inputLeft)));
         if (inputMid != 1) {
-            val = applyGama(val, inputMid);
+            channelValue = applyGama(channelValue, inputMid);
         }
-        val = ((val / 225d) * (outputRight - outputLeft) + outputLeft);
-        if (val < 0) return 0;
-        if (val > 255) return 255;
-        return (int) val;
+        channelValue = ((channelValue / 225d) * (outputRight - outputLeft) + outputLeft);
+        return (int) channelValue;
     }
 
     // https://github.com/varunpant/GHEAT-JAVA/blob/master/JavaHeatMaps/gheat/src/main/java/gheat/graphics/GammaCorrection.java

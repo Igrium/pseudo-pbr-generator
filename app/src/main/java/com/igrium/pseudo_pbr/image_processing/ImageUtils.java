@@ -45,7 +45,7 @@ public final class ImageUtils {
         gfx.fillRect(0, 0, width, height);
         gfx.dispose();
         return image;
-    } 
+    }
     
     /**
      * Copy a channel from one image into the alpha channel of another image.
@@ -54,7 +54,7 @@ public final class ImageUtils {
      * @param channel Channel from source image.
      * @return <code>dest</code>
      */
-
+    @Deprecated
     public static BufferedImage applyAlpha(BufferedImage source, BufferedImage dest, ColorChannel channel) {
         if (source.getWidth() != dest.getWidth() || source.getHeight() != dest.getHeight()) {
             throw new IllegalArgumentException("Source and destination images must be the same size!");

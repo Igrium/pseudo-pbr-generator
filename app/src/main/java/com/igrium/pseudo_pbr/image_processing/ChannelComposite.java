@@ -1,13 +1,11 @@
 package com.igrium.pseudo_pbr.image_processing;
 
+import java.awt.Color;
 import java.awt.Composite;
 import java.awt.CompositeContext;
 import java.awt.RenderingHints;
 import java.awt.image.ColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
-import java.awt.image.RasterFormatException;
 import java.awt.image.WritableRaster;
 import java.util.Collection;
 import java.util.Set;
@@ -16,7 +14,9 @@ import com.igrium.pseudo_pbr.image_processing.ImageUtils.ColorChannel;
 
 /**
  * Masks the composite to specified color channels.
+ * @deprecated Doesn't work yet.
  */
+@Deprecated
 public class ChannelComposite implements Composite {
 
     Collection<ColorChannel> channels;
@@ -37,85 +37,68 @@ public class ChannelComposite implements Composite {
         this(Set.of(channels));
     }
 
-    private static boolean checkComponentsOrder(ColorModel cm) {
-        if (cm instanceof DirectColorModel &&
-                cm.getTransferType() == DataBuffer.TYPE_INT) {
-            DirectColorModel directCM = (DirectColorModel) cm;
-            
-            return directCM.getRedMask() == 0x00FF0000 &&
-                   directCM.getGreenMask() == 0x0000FF00 &&
-                   directCM.getBlueMask() == 0x000000FF &&
-                   (directCM.getNumComponents() != 4 ||
-                    directCM.getAlphaMask() == 0xFF000000);
-        }
-        
-        return false;
-    }
-
     @Override
-    public CompositeContext createContext(ColorModel srcColorModel, ColorModel dstColorModel, RenderingHints hints) throws RasterFormatException {
-        if (!checkComponentsOrder(srcColorModel)) throw new RasterFormatException("Unsupported source color model.");
-        if (!checkComponentsOrder(dstColorModel)) throw new RasterFormatException("Unsupported dest color model.");
-        return new ChannelContext(channels);
+    public CompositeContext createContext(ColorModel srcColorModel, ColorModel dstColorModel, RenderingHints hints) {
+        return new ChannelContext(channels, srcColorModel, dstColorModel);
     }
     
 }
 
-
 class ChannelContext implements CompositeContext {
 
     Collection<ColorChannel> channels;
+    ColorModel srcColorModel;
+    ColorModel dstColorModel;
 
-    public ChannelContext(Collection<ColorChannel> channels) {
+    public ChannelContext(Collection<ColorChannel> channels, ColorModel srcColorModel, ColorModel dstColorModel) {
         this.channels = channels;
+        this.srcColorModel = srcColorModel;
+        this.dstColorModel = dstColorModel;
     }
+
+    @Override
+    public void dispose() {}
 
     @Override
     public void compose(Raster src, Raster dstIn, WritableRaster dstOut) {
         int width = Math.min(src.getWidth(), dstIn.getWidth());
         int height = Math.min(src.getHeight(), dstIn.getHeight());
+
+        boolean alpha = channels.contains(ColorChannel.ALPHA);
+        boolean red = channels.contains(ColorChannel.RED);
+        boolean green = channels.contains(ColorChannel.GREEN);
+        boolean blue = channels.contains(ColorChannel.BLUE);
         
-        int[] result = new int[4];
-        int[] srcPixel = new int[4];
-        int[] dstPixel = new int[4];
-        int[] srcPixels = new int[width];
-        int[] dstPixels = new int[width];
+        Object srcBuffer = src.getDataElements(0, 0, null);
+        Object destBuffer = dstIn.getDataElements(0, 0, null);
+
+        // ARGB
+        int[] pixelCache = new int[4];
 
         for (int y = 0; y < height; y++) {
-            src.getDataElements(0, y, width, 1, srcPixels);
-            dstIn.getDataElements(0, y, width, 1, dstPixels);
             for (int x = 0; x < width; x++) {
-                int pixel = srcPixels[x];
+                destBuffer = dstIn.getDataElements(x, y, destBuffer);
+                pixelCache[0] = dstColorModel.getAlpha(destBuffer);
+                pixelCache[1] = dstColorModel.getRed(destBuffer);
+                pixelCache[2] = dstColorModel.getGreen(destBuffer);
+                pixelCache[3] = dstColorModel.getBlue(destBuffer);
 
-                // pixels are stored as INT_ARGB
-                // our arrays are [R, G, B, A]
-                srcPixel[0] = (pixel >> 16) & 0xFF;
-                srcPixel[1] = (pixel >>  8) & 0xFF;
-                srcPixel[2] = (pixel      ) & 0xFF;
-                srcPixel[3] = (pixel >> 24) & 0xFF;
+                srcBuffer = src.getDataElements(x, y, srcBuffer);
 
-                pixel = dstPixels[x];
-                dstPixel[0] = (pixel >> 16) & 0xFF;
-                dstPixel[1] = (pixel >>  8) & 0xFF;
-                dstPixel[2] = (pixel      ) & 0xFF;
-                dstPixel[3] = (pixel >> 24) & 0xFF;
+                if (alpha) pixelCache[0] = srcColorModel.getAlpha(srcBuffer);
+                if (red) pixelCache[1] = srcColorModel.getRed(srcBuffer);
+                if (green) pixelCache[2] = srcColorModel.getGreen(srcBuffer);
+                if (blue) pixelCache[3] = srcColorModel.getBlue(srcBuffer);
 
-                result[0] = channels.contains(ColorChannel.RED) ? srcPixel[0] : dstPixel[0];
-                result[1] = channels.contains(ColorChannel.GREEN) ? srcPixel[1] : dstPixel[1];
-                result[2] = channels.contains(ColorChannel.BLUE) ? srcPixel[2] : dstPixel[2];
-                result[3] = channels.contains(ColorChannel.ALPHA) ? srcPixel[3] : dstPixel[3];
-
-                dstPixels[x] = (result[3] & 0xFF) << 24 |
-                               (result[0] & 0xFF) << 16 |
-                               (result[1] & 0xFF) <<  8 |
-                               result[2] & 0xFF;
+                destBuffer = dstColorModel.getDataElements(new Color(
+                        pixelCache[1],
+                        pixelCache[2],
+                        pixelCache[3],
+                        pixelCache[0]
+                    ).getRGB(), destBuffer);
+                
+                dstOut.setDataElements(x, y, destBuffer);
             }
-            dstOut.setDataElements(0, y, width, 1, dstPixels);
         }
     }
-
-    @Override
-    public void dispose() {        
-    }
-    
 }
